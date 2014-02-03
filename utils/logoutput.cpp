@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "utils/logoutput.h"
+#include "logoutput.h"
 
 int verbose_level;
 
@@ -10,9 +10,9 @@ void logError(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    vfprintf(stdout, fmt, args);
+    vfprintf(stderr, fmt, args);
     va_end(args);
-    fflush(stdout);
+    fflush(stderr);
 }
 
 void _log(const char* fmt, ...)
@@ -22,15 +22,15 @@ void _log(const char* fmt, ...)
 
     va_list args;
     va_start(args, fmt);
-    vfprintf(stdout, fmt, args);
+    vfprintf(stderr, fmt, args);
     va_end(args);
-    fflush(stdout);
+    fflush(stderr);
 }
 void logProgress(const char* type, int value, int maxValue)
 {
     if (verbose_level < 2)
         return;
 
-    fprintf(stdout, "Progress:%s:%i:%i\n", type, value, maxValue);
-    fflush(stdout);
+    fprintf(stderr, "Progress:%s:%i:%i\n", type, value, maxValue);
+    fflush(stderr);
 }
