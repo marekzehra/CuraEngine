@@ -8,12 +8,13 @@
 CXX ?= g++
 CFLAGS += -c -Wall -Wextra -O3 -fomit-frame-pointer
 # also include debug symbols
-#CFLAGS+=-ggdb
+CFLAGS+=-ggdb
 LDFLAGS +=
 SOURCES  = bridge.cpp comb.cpp gcodeExport.cpp infill.cpp inset.cpp layerPart.cpp main.cpp optimizedModel.cpp pathOrderOptimizer.cpp polygonOptimizer.cpp raft.cpp settings.cpp skin.cpp skirt.cpp slicer.cpp support.cpp timeEstimate.cpp
 SOURCES += clipper/clipper.cpp modelFile/modelFile.cpp utils/gettime.cpp utils/logoutput.cpp utils/socket.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
-EXECUTABLE = ./CuraEngine
+EXECUTABLE = ./CuraEngine.lipo
+LIBRARY = ./libCuraEngine.a
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
@@ -33,7 +34,7 @@ ifeq ($(UNAME), MINGW32_NT-6.1)
 	LDFLAGS += -Wl,--large-address-aware -lm -lwsock32
 endif
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(SOURCES) $(EXECUTABLE) $(LIBRARY)
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CXX) $(OBJECTS) -o $@ $(LDFLAGS)
@@ -44,9 +45,14 @@ $(EXECUTABLE): $(OBJECTS)
 test: $(EXECUTABLE)
 	python _tests/runtest.py $(abspath $(EXECUTABLE))
 
+library: $(LIBRARY)
+
+$(LIBRARY): $(OBJECTS)
+	$(AR) rvs $(LIBRARY) $(OBJECTS)
+
 ## clean stuff
 clean:
-	rm -f $(EXECUTABLE) $(OBJECTS)
+	rm -f $(EXECUTABLE) $(OBJECTS) $(LIBRARY)
 
 help:
 	@cat Makefile |grep \#\#| grep \: |cut -d\# -f3
