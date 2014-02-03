@@ -105,7 +105,7 @@ public:
         }
     }
 
-private:
+//private:
     void preSetup()
     {
         skirtConfig.setData(config.printSpeed, config.extrusionWidth, "SKIRT");
