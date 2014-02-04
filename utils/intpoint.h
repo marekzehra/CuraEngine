@@ -39,6 +39,13 @@ public:
         return z;
     }
     
+    int32_t min()
+    {
+        if (x < y && x < z) return x;
+        if (y < z) return y;
+        return z;
+    }
+    
     bool testLength(int32_t len)
     {
         if (x > len || x < -len)
