@@ -78,6 +78,13 @@ public:
             (p.x * m[0][1] + p.y * m[1][1] + p.z * m[2][1]) * 1000.0,
             (p.x * m[0][2] + p.y * m[1][2] + p.z * m[2][2]) * 1000.0);
     }
+    FPoint3 applyFloat(FPoint3 p)
+    {
+        return FPoint3(
+                      (p.x * m[0][0] + p.y * m[1][0] + p.z * m[2][0]),
+                      (p.x * m[0][1] + p.y * m[1][1] + p.z * m[2][1]),
+                      (p.x * m[0][2] + p.y * m[1][2] + p.z * m[2][2]));
+    }
 };
 
 #endif//INT_POINT_H
