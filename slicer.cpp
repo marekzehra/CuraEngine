@@ -313,7 +313,7 @@ Slicer::Slicer(OptimizedVolume* ov, int32_t initial, int32_t thickness, bool kee
     modelMin = ov->model->vMin;
     
     int layerCount = (modelSize.z - initial) / thickness + 1;
-    log("Layer count: %i\n", layerCount);
+    //log("Layer count: %i\n", layerCount);
     layers.resize(layerCount);
     
     for(int32_t layerNr = 0; layerNr < layerCount; layerNr++)
