@@ -14,7 +14,21 @@
 #define FIX_HORRIBLE_KEEP_NONE_CLOSED    0x10
 
 /**
- * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode. 
+ * Type of support material.
+ * Grid is a X/Y grid with an outline, which is very strong, provides good support. But in some cases is hard to remove.
+ * Lines give a row of lines which break off one at a time, making them easier to remove, but they do not support as good as the grid support.
+ */
+#define SUPPORT_TYPE_GRID                0
+#define SUPPORT_TYPE_LINES               1
+
+#ifndef DEFAULT_CONFIG_PATH
+#define DEFAULT_CONFIG_PATH "default.cfg"
+#endif
+
+#define CONFIG_MULTILINE_SEPARATOR "\"\"\""
+
+/**
+ * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode.
  *  This is the most commonly used GCode set.
  *  G0 for moves, G1 for extrusion.
  *  E values give mm of filament extrusion.
@@ -23,7 +37,7 @@
  **/
 #define GCODE_FLAVOR_REPRAP              0
 /**
- * UltiGCode flavored is Marlin based GCode. 
+ * UltiGCode flavored is Marlin based GCode.
  *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independed GCode.
  *  G0 for moves, G1 for extrusion.
  *  E values give mm^3 of filament extrusion. Ignores the filament diameter setting.
@@ -50,7 +64,7 @@ class _ConfigSettingIndex
 public:
     const char* key;
     int* ptr;
-    
+
     _ConfigSettingIndex(const char* key, int* ptr) : key(key), ptr(ptr) {}
 };
 
@@ -72,16 +86,20 @@ public:
     int skirtDistance;
     int skirtLineCount;
     int skirtMinLength;
+
+    //Retraction settings
     int retractionAmount;
     int retractionAmountExtruderSwitch;
     int retractionSpeed;
     int retractionMinimalDistance;
     int minimalExtrusionBeforeRetraction;
+    int retractionZHop;
+
     int enableCombing;
     int enableOozeShield;
     int wipeTowerSize;
     int multiVolumeOverlap;
-    
+
     int initialSpeedupLayers;
     int initialLayerSpeed;
     int printSpeed;
@@ -90,8 +108,9 @@ public:
     int insetXSpeed;
     int moveSpeed;
     int fanFullOnLayerNr;
-    
+
     //Support material
+    int supportType;
     int supportAngle;
     int supportEverywhere;
     int supportLineDistance;
@@ -105,7 +124,7 @@ public:
     int coolHeadLift;
     int fanSpeedMin;
     int fanSpeedMax;
-    
+
     //Raft settings
     int raftMargin;
     int raftLineSpacing;
@@ -113,21 +132,23 @@ public:
     int raftBaseLinewidth;
     int raftInterfaceThickness;
     int raftInterfaceLinewidth;
-    
+
     FMatrix3x3 matrix;
     IntPoint objectPosition;
     int objectSink;
-    
+
     int fixHorrible;
     int spiralizeMode;
     int gcodeFlavor;
-    
+
     IntPoint extruderOffset[MAX_EXTRUDERS];
-    const char* startCode;
-    const char* endCode;
-    
+    std::string startCode;
+    std::string endCode;
+
     ConfigSettings();
     bool setSetting(const char* key, const char* value);
+    bool readSettings(void);
+    bool readSettings(const char* path);
 };
 
 #endif//SETTINGS_H

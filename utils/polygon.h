@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <assert.h>
+#include <float.h>
 using std::vector;
 #include "../clipper/clipper.hpp"
 
@@ -112,6 +113,22 @@ public:
         return Point(x, y);
     }
     
+    Point closestPointTo(Point p)
+    {
+        Point ret = p;
+        float bestDist = FLT_MAX;
+        for(unsigned int n=0; n<polygon->size(); n++)
+        {
+            float dist = vSize2f(p - (*polygon)[n]);
+            if (dist < bestDist)
+            {
+                ret = (*polygon)[n];
+                bestDist = dist;
+            }
+        }
+        return ret;
+    }
+    
     friend class Polygons;
 };
 
@@ -124,6 +141,7 @@ public:
     {
     }
 };
+//<windows.h> defines a Polygon structure, to prevent a clash define Polygon as _Polygon.
 #define Polygon _Polygon
 
 class Polygons
