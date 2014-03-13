@@ -54,7 +54,6 @@
 		F0B1A2921896A195008E7B3A /* slicer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = slicer.h; sourceTree = "<group>"; };
 		F0B1A2931896A195008E7B3A /* support.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = support.cpp; sourceTree = "<group>"; };
 		F0B1A2941896A195008E7B3A /* support.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = support.h; sourceTree = "<group>"; };
-		F0B1A2951896A195008E7B3A /* test.gcode */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test.gcode; sourceTree = "<group>"; };
 		F0B1A2961896A195008E7B3A /* timeEstimate.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = timeEstimate.cpp; sourceTree = "<group>"; };
 		F0B1A2971896A195008E7B3A /* timeEstimate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = timeEstimate.h; sourceTree = "<group>"; };
 		F0B1A2991896A195008E7B3A /* floatpoint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floatpoint.h; sourceTree = "<group>"; };
@@ -112,7 +111,6 @@
 				F0B1A2921896A195008E7B3A /* slicer.h */,
 				F0B1A2931896A195008E7B3A /* support.cpp */,
 				F0B1A2941896A195008E7B3A /* support.h */,
-				F0B1A2951896A195008E7B3A /* test.gcode */,
 				F0B1A2961896A195008E7B3A /* timeEstimate.cpp */,
 				F0B1A2971896A195008E7B3A /* timeEstimate.h */,
 				F0B1A2981896A195008E7B3A /* utils */,
