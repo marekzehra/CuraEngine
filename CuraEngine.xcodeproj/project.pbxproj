@@ -182,7 +182,7 @@
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = "/Users/marekzehra/Skola/FIT/Diplomova prace/libs/CuraEngine";
+			buildWorkingDirectory = /Users/marekzehra/Skola/FIT/Diplomova_prace/libs/CuraEngine;
 			dependencies = (
 			);
 			name = libCuraEngine;

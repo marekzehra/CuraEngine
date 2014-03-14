@@ -14,7 +14,7 @@ LDFLAGS +=
 SOURCES  = bridge.cpp comb.cpp gcodeExport.cpp infill.cpp inset.cpp layerPart.cpp main.cpp optimizedModel.cpp pathOrderOptimizer.cpp polygonOptimizer.cpp raft.cpp settings.cpp skin.cpp skirt.cpp slicer.cpp support.cpp timeEstimate.cpp
 SOURCES += clipper/clipper.cpp modelFile/modelFile.cpp utils/gettime.cpp utils/logoutput.cpp utils/socket.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
-EXECUTABLE = ./CuraEngine.lipo
+EXECUTABLE = ./CuraEngine
 LIBRARY = ./libCuraEngine.a
 UNAME := $(shell uname)
 
@@ -25,8 +25,8 @@ endif
 ifeq ($(UNAME), Darwin)
 	OPEN_HTML=open
 	#For MacOS force to build
-	CFLAGS += -force_cpusubtype_ALL -mmacosx-version-min=10.6 -arch x86_64 -arch i386
-	LDFLAGS += -force_cpusubtype_ALL -mmacosx-version-min=10.6 -arch x86_64 -arch i386
+	#CFLAGS += -force_cpusubtype_ALL -mmacosx-version-min=10.6 -arch x86_64 -arch i386
+	#LDFLAGS += -force_cpusubtype_ALL -mmacosx-version-min=10.6 -arch x86_64 -arch i386
 endif
 ifeq ($(UNAME), MINGW32_NT-6.1)
 	#For windows make it large address aware, which allows the process to use more then 2GB of memory.
