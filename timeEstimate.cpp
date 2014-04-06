@@ -200,7 +200,7 @@ double TimeEstimateCalculator::calculate()
 }
 
 // The kernel called by accelerationPlanner::calculate() when scanning the plan from last to first entry.
-void TimeEstimateCalculator::planner_reverse_pass_kernel(Block *previous, Block *current, Block *next)
+void TimeEstimateCalculator::planner_reverse_pass_kernel(Block *current, Block *next)
 {
     if(!current || !next)
         return;
@@ -230,12 +230,12 @@ void TimeEstimateCalculator::reverse_pass()
         block[2]= block[1];
         block[1]= block[0];
         block[0] = &blocks[n];
-        planner_reverse_pass_kernel(block[0], block[1], block[2]);
+        planner_reverse_pass_kernel(block[1], block[2]);
     }
 }
 
 // The kernel called by accelerationPlanner::calculate() when scanning the plan from first to last entry.
-void TimeEstimateCalculator::planner_forward_pass_kernel(Block *previous, Block *current, Block *next)
+void TimeEstimateCalculator::planner_forward_pass_kernel(Block *previous, Block *current)
 {
     if(!previous)
         return;
@@ -268,9 +268,9 @@ void TimeEstimateCalculator::forward_pass()
         block[0]= block[1];
         block[1]= block[2];
         block[2] = &blocks[n];
-        planner_forward_pass_kernel(block[0], block[1], block[2]);
+        planner_forward_pass_kernel(block[0], block[1]);
     }
-    planner_forward_pass_kernel(block[1], block[2], NULL);
+    planner_forward_pass_kernel(block[1], block[2]);
 }
 
 // Recalculates the trapezoid speed profiles for all blocks in the plan according to the 

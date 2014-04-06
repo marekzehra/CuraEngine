@@ -69,8 +69,8 @@ private:
     void recalculate_trapezoids();
     
     void calculate_trapezoid_for_block(Block *block, double entry_factor, double exit_factor);
-    void planner_reverse_pass_kernel(Block *previous, Block *current, Block *next);
-    void planner_forward_pass_kernel(Block *previous, Block *current, Block *next);
+    void planner_reverse_pass_kernel(Block *current, Block *next);
+    void planner_forward_pass_kernel(Block *previous, Block *current);
 };
 
 #endif//TIME_ESTIMATE_H
