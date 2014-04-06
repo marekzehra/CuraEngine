@@ -143,6 +143,7 @@ public:
     std::vector<SlicerLayer> layers;
     Point3 modelSize, modelMin;
     
+    Slicer();
     Slicer(OptimizedVolume* ov, int32_t initial, int32_t thickness, bool keepNoneClosed, bool extensiveStitching);
     
     SlicerSegment project2D(Point3& p0, Point3& p1, Point3& p2, int32_t z) const
@@ -156,6 +157,7 @@ public:
     }
     
     void dumpSegmentsToHTML(const char* filename);
+    static SlicerLayer* sliceLayer(OptimizedVolume* ov,unsigned int layerNr, int32_t initial, int32_t thickness, bool keepNoneClosed, bool extensiveStitching);
 };
 
 #endif//SLICER_H
