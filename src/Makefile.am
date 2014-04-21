@@ -1,6 +1,6 @@
 # what flags you want to pass to the C compiler & linker
-CPPFLAGS = -c -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -std=c++11 -DVERSION=\"$(VERSION)\" -isystem libs
-LDFLAGS = -L../build/ -lclipper
+CPPFLAGS += -c -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -std=c++0x -DVERSION=\"$(VERSION)\" -isystem libs
+#LDFLAGS = -L../build -lclipper
 
 BUILD_DIR = ../build
 
@@ -62,5 +62,7 @@ utils/socket.h
 bin_PROGRAMS = $(BUILD_DIR)/CuraEngine
 noinst_LIBRARIES = $(BUILD_DIR)/libCuraEngine.a
 
+__BUILD_DIR__CuraEngine_LDADD = -L../build/libclipper.a 
+#__BUILD_DIR__CuraEngine_LDFLAGS = -lclipper 
 __BUILD_DIR__CuraEngine_SOURCES = $(SOURCES_RAW) $(HEADERS_RAW)
 __BUILD_DIR__libCuraEngine_a_SOURCES = $(SOURCES_RAW) $(HEADERS_RAW)

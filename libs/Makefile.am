@@ -1,5 +1,5 @@
 # what flags you want to pass to the C compiler & linker
-CPPFLAGS = -c -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -DVERSION=\"$(VERSION)\" -isystem libs
+CPPFLAGS = -c
 
 BUILD_DIR = ../build
 
