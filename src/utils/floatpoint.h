@@ -11,6 +11,7 @@ They represent millimeters in 3D space.
 
 #include <stdint.h>
 #include <math.h>
+#include <sstream>
 
 class FPoint3
 {
@@ -29,6 +30,12 @@ public:
     
     bool operator==(FPoint3& p) const { return x==p.x&&y==p.y&&z==p.z; }
     bool operator!=(FPoint3& p) const { return x!=p.x||y!=p.y||z!=p.z; }
+    
+    const char* str(){
+    	std::stringstream out;
+    	out << "[" << x << "," << y << "," << z << "]";
+		return out.str().c_str();    	
+    }
     
     double max()
     {
