@@ -25,7 +25,6 @@ src/modelFile/.deps
 src/utils/.deps
 .dirstamp
 missing
-Makefile
 config.h
 config.log
 config.status
