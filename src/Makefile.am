@@ -62,7 +62,7 @@ utils/socket.h
 bin_PROGRAMS = $(BUILD_DIR)/CuraEngine
 noinst_LIBRARIES = $(BUILD_DIR)/libCuraEngine.a
 
-__BUILD_DIR__CuraEngine_LDADD = -L../build/libclipper.a 
+__BUILD_DIR__CuraEngine_LDADD = -L../build -lclipper
 #__BUILD_DIR__CuraEngine_LDFLAGS = -lclipper 
 __BUILD_DIR__CuraEngine_SOURCES = $(SOURCES_RAW) $(HEADERS_RAW)
 __BUILD_DIR__libCuraEngine_a_SOURCES = $(SOURCES_RAW) $(HEADERS_RAW)
