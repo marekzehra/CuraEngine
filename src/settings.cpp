@@ -13,8 +13,11 @@
 #define SETTING(name, default) do { _index.push_back(_ConfigSettingIndex(STRINGIFY(name), &name)); name = (default); } while(0)
 #define SETTING2(name, altname, default) do { _index.push_back(_ConfigSettingIndex(STRINGIFY(name), &name)); _index.push_back(_ConfigSettingIndex(STRINGIFY(altname), &name)); name = (default); } while(0)
 
+ConfigSettings *ConfigSettings::config = NULL;
+
 ConfigSettings::ConfigSettings()
 {
+    config = this;
     SETTING(layerThickness, 100);
     SETTING(initialLayerThickness, 300);
     SETTING(filamentDiameter, 2890);
@@ -41,7 +44,7 @@ ConfigSettings::ConfigSettings()
     SETTING(infillSpeed, 50);
     SETTING(infillPattern, INFILL_AUTOMATIC);
 
-    SETTING(supportType, 0);
+    SETTING(supportType, SUPPORT_TYPE_GRID);
     SETTING(supportAngle, -1);
     SETTING(supportEverywhere, 0);
     SETTING(supportLineDistance, sparseInfillLineDistance);
@@ -64,6 +67,7 @@ ConfigSettings::ConfigSettings()
     SETTING2(objectPosition.X, posx, 102500);
     SETTING2(objectPosition.Y, posy, 102500);
     SETTING(objectSink, 0);
+    SETTING(autoCenter, 1);
 
     SETTING(raftMargin, 5000);
     SETTING(raftLineSpacing, 1000);
@@ -71,8 +75,9 @@ ConfigSettings::ConfigSettings()
     SETTING(raftBaseLinewidth, 0);
     SETTING(raftInterfaceThickness, 0);
     SETTING(raftInterfaceLinewidth, 0);
-    SETTING(raftInterfaceLineSpacing, 250);
+    SETTING(raftInterfaceLineSpacing, 0);
     SETTING(raftAirGap, 0);
+    SETTING(raftAirGapLayer0, 0);
     SETTING(raftBaseSpeed, 0);
     SETTING(raftFanSpeed, 0);
     SETTING(raftSurfaceThickness, 0);
@@ -89,6 +94,7 @@ ConfigSettings::ConfigSettings()
 
     SETTING(fixHorrible, 0);
     SETTING(spiralizeMode, 0);
+    SETTING(simpleMode, 0);
     SETTING(gcodeFlavor, GCODE_FLAVOR_REPRAP);
 
     memset(extruderOffset, 0, sizeof(extruderOffset));
@@ -140,6 +146,16 @@ bool ConfigSettings::setSetting(const char* key, const char* value)
     if (stringcasecompare(key, "endCode") == 0)
     {
         this->endCode = value;
+        return true;
+    }
+    if (stringcasecompare(key, "preSwitchExtruderCode") == 0)
+    {
+        this->preSwitchExtruderCode = value;
+        return true;
+    }
+    if (stringcasecompare(key, "postSwitchExtruderCode") == 0)
+    {
+        this->postSwitchExtruderCode = value;
         return true;
     }
     return false;

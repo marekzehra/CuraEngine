@@ -2,6 +2,7 @@
 #define FFF_PROCESSOR_H
 
 #include <algorithm>
+#include <vector>
 #include "utils/socket.h"
 
 #define GUI_CMD_REQUEST_MESH 0x01
@@ -63,7 +64,7 @@ public:
         return gcode.isOpened();
     }
 
-    bool processFile(const char* input_filename)
+    bool processFile(const std::vector<std::string> &files)
     {
         if (!gcode.isOpened())
             return false;
@@ -71,7 +72,7 @@ public:
         TimeKeeper timeKeeperTotal;
         SliceDataStorage storage;
         preSetup();
-        if (!prepareModel(storage, input_filename))
+        if (!prepareModel(storage, files))
             return false;
 
         processSliceData(storage);
@@ -102,16 +103,18 @@ private:
 
         for(unsigned int n=1; n<MAX_EXTRUDERS;n++)
             gcode.setExtruderOffset(n, config.extruderOffset[n].p());
+        gcode.setSwitchExtruderCode(config.preSwitchExtruderCode, config.postSwitchExtruderCode);
         gcode.setFlavor(config.gcodeFlavor);
         gcode.setRetractionSettings(config.retractionAmount, config.retractionSpeed, config.retractionAmountExtruderSwitch, config.minimalExtrusionBeforeRetraction, config.retractionZHop, config.retractionAmountPrime);
     }
 
-    bool prepareModel(SliceDataStorage& storage, const char* input_filename)
+    bool prepareModel(SliceDataStorage& storage, const std::vector<std::string> &files)
     {
         timeKeeper.restart();
         SimpleModel* model = nullptr;
-        if (input_filename[0] == '$')
+        if (files.size() == 1 && files[0][0] == '$')
         {
+            const char *input_filename = files[0].c_str();
             model = new SimpleModel();
             for(unsigned int n=0; input_filename[n]; n++)
             {
@@ -138,13 +141,19 @@ private:
                 }
             }
         }else{
-            cura::log("Loading %s from disk...\n", input_filename);
-            model = loadModelFromFile(input_filename, config.matrix);
-        }
-        if (!model)
-        {
-            cura::logError("Failed to load model: %s\n", input_filename);
-            return false;
+            model = new SimpleModel();
+            for(unsigned int i=0;i < files.size(); i++) {
+                if(files[i] == "-")
+                    model->volumes.push_back(SimpleVolume());
+                else {
+                    cura::log("Loading %s from disk...\n", files[i].c_str());
+                    SimpleModel *test = loadModelFromFile(model,files[i].c_str(), config.matrix);
+                    if(test == nullptr) { // error while reading occurred
+                        cura::logError("Failed to load model: %s\n", files[i].c_str());
+                        return false;
+                    }
+                }
+            }
         }
         cura::log("Loaded from disk in %5.3fs\n", timeKeeper.restart());
         cura::log("Analyzing and optimizing model...\n");
@@ -200,7 +209,7 @@ private:
             storage.volumes.push_back(SliceVolumeStorage());
             createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (FIX_HORRIBLE_UNION_ALL_TYPE_A | FIX_HORRIBLE_UNION_ALL_TYPE_B | FIX_HORRIBLE_UNION_ALL_TYPE_C));
             delete slicerList[volumeIdx];
-            
+
             //Add the raft offset to each layer.
             for(unsigned int layerNr=0; layerNr<storage.volumes[volumeIdx].layers.size(); layerNr++)
                 storage.volumes[volumeIdx].layers[layerNr].printZ += config.raftBaseThickness + config.raftInterfaceThickness;
@@ -211,17 +220,33 @@ private:
 
     void processSliceData(SliceDataStorage& storage)
     {
+        const unsigned int totalLayers = storage.volumes[0].layers.size();
+        
         //carveMultipleVolumes(storage.volumes);
         generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
         //dumpLayerparts(storage, "c:/models/output.html");
+        if (config.simpleMode)
+        {
+            for(unsigned int layerNr=0; layerNr<totalLayers; layerNr++)
+            {
+                for(unsigned int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
+                {
+                    SliceLayer* layer = &storage.volumes[volumeIdx].layers[layerNr];
+                    for(unsigned int partNr=0; partNr<layer->parts.size(); partNr++)
+                    {
+                        sendPolygonsToGui("inset0", layerNr, layer->printZ, layer->parts[partNr].outline);
+                    }
+                }
+            }
+            return;
+        }
 
-        const unsigned int totalLayers = storage.volumes[0].layers.size();
         for(unsigned int layerNr=0; layerNr<totalLayers; layerNr++)
         {
             for(unsigned int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
             {
                 int insetCount = config.insetCount;
-                if (config.spiralizeMode && int(layerNr) < config.downSkinCount && layerNr % 2 == 1)//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
+                if (config.spiralizeMode && static_cast<int>(layerNr) < config.downSkinCount && layerNr % 2 == 1)//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
                     insetCount += 5;
                 SliceLayer* layer = &storage.volumes[volumeIdx].layers[layerNr];
                 int extrusionWidth = config.extrusionWidth;
@@ -268,7 +293,7 @@ private:
 
         for(unsigned int layerNr=0; layerNr<totalLayers; layerNr++)
         {
-            if (!config.spiralizeMode || int(layerNr) < config.downSkinCount)    //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
+            if (!config.spiralizeMode || static_cast<int>(layerNr) < config.downSkinCount)    //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
             {
                 for(unsigned int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
                 {
@@ -298,7 +323,10 @@ private:
             storage.wipePoint = Point(storage.modelMin.x - 3000 - config.wipeTowerSize / 2, storage.modelMax.y + 3000 + config.wipeTowerSize / 2);
         }
 
-        generateSkirt(storage, config.skirtDistance, config.layer0extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness);
+        if (config.raftBaseThickness > 0 && config.raftInterfaceThickness > 0)
+            generateSkirt(storage, config.raftMargin + config.raftBaseLinewidth, config.raftBaseLinewidth, config.skirtLineCount, config.skirtMinLength, config.raftBaseThickness);
+        else
+            generateSkirt(storage, config.skirtDistance, config.layer0extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness);
         generateRaft(storage, config.raftMargin);
 
         sendPolygonsToGui("skirt", 0, config.initialLayerThickness, storage.skirt);
@@ -338,21 +366,22 @@ private:
         {
             sendPolygonsToGui("support", 0, config.raftBaseThickness, storage.raftOutline);
             sendPolygonsToGui("support", 0, config.raftBaseThickness + config.raftInterfaceThickness, storage.raftOutline);
-            
+
             GCodePathConfig raftBaseConfig((config.raftBaseSpeed <= 0) ? config.initialLayerSpeed : config.raftBaseSpeed, config.raftBaseLinewidth, "SUPPORT");
             GCodePathConfig raftMiddleConfig(config.printSpeed, config.raftInterfaceLinewidth, "SUPPORT");
             GCodePathConfig raftInterfaceConfig(config.printSpeed, config.raftInterfaceLinewidth, "SUPPORT");
             GCodePathConfig raftSurfaceConfig((config.raftSurfaceSpeed > 0) ? config.raftSurfaceSpeed : config.printSpeed, config.raftSurfaceLinewidth, "SUPPORT");
-            
+
             {
                 gcode.writeComment("LAYER:-2");
                 gcode.writeComment("RAFT");
                 GCodePlanner gcodeLayer(gcode, config.moveSpeed, config.retractionMinimalDistance);
                 if (config.supportExtruder > 0)
                     gcodeLayer.setExtruder(config.supportExtruder);
-                gcodeLayer.setAlwaysRetract(true);
                 gcode.setZ(config.raftBaseThickness);
                 gcode.setExtrusion(config.raftBaseThickness, config.filamentDiameter, config.filamentFlow);
+
+                gcodeLayer.addPolygonsByOptimizer(storage.skirt, &raftBaseConfig);
                 gcodeLayer.addPolygonsByOptimizer(storage.raftOutline, &raftBaseConfig);
 
                 Polygons raftLines;
@@ -365,12 +394,11 @@ private:
             if (config.raftFanSpeed) {
                 gcode.writeFanCommand(config.raftFanSpeed);
             }
-            
+
             {
                 gcode.writeComment("LAYER:-1");
                 gcode.writeComment("RAFT");
                 GCodePlanner gcodeLayer(gcode, config.moveSpeed, config.retractionMinimalDistance);
-                gcodeLayer.setAlwaysRetract(true);
                 gcode.setZ(config.raftBaseThickness + config.raftInterfaceThickness);
                 gcode.setExtrusion(config.raftInterfaceThickness, config.filamentDiameter, config.filamentFlow);
 
@@ -383,15 +411,14 @@ private:
 
             for (int raftSurfaceLayer=1; raftSurfaceLayer<=config.raftSurfaceLayers; raftSurfaceLayer++)
             {
-                gcode.writeComment("LAYER:FullRaft");
+                gcode.writeComment("LAYER:-1");
                 gcode.writeComment("RAFT");
                 GCodePlanner gcodeLayer(gcode, config.moveSpeed, config.retractionMinimalDistance);
-                gcodeLayer.setAlwaysRetract(true);
                 gcode.setZ(config.raftBaseThickness + config.raftInterfaceThickness + config.raftSurfaceThickness*raftSurfaceLayer);
                 gcode.setExtrusion(config.raftSurfaceThickness, config.filamentDiameter, config.filamentFlow);
 
                 Polygons raftLines;
-                generateLineInfill(storage.raftOutline, raftLines, config.raftSurfaceLinewidth, config.raftSurfaceLineSpacing, config.infillOverlap, 90);
+                generateLineInfill(storage.raftOutline, raftLines, config.raftSurfaceLinewidth, config.raftSurfaceLineSpacing, config.infillOverlap, 90 * raftSurfaceLayer);
                 gcodeLayer.addPolygonsByOptimizer(raftLines, &raftSurfaceConfig);
 
                 gcodeLayer.writeGCode(false, config.raftInterfaceThickness);
@@ -406,7 +433,7 @@ private:
             int extrusionWidth = config.extrusionWidth;
             if (layerNr == 0)
                 extrusionWidth = config.layer0extrusionWidth;
-            if (int(layerNr) < config.initialSpeedupLayers)
+            if (static_cast<int>(layerNr) < config.initialSpeedupLayers)
             {
                 int n = config.initialSpeedupLayers;
 #define SPEED_SMOOTH(speed) \
@@ -434,8 +461,14 @@ private:
             GCodePlanner gcodeLayer(gcode, config.moveSpeed, config.retractionMinimalDistance);
             int32_t z = config.initialLayerThickness + layerNr * config.layerThickness;
             z += config.raftBaseThickness + config.raftInterfaceThickness + config.raftSurfaceLayers*config.raftSurfaceThickness;
-            if (layerNr == 0) {
-                z += config.raftAirGap;
+            if (config.raftBaseThickness > 0 && config.raftInterfaceThickness > 0)
+            {
+                if (layerNr == 0)
+                {
+                    z += config.raftAirGapLayer0;
+                } else {
+                    z += config.raftAirGap;
+                }
             }
             gcode.setZ(z);
 
@@ -463,14 +496,14 @@ private:
                 int n = gcodeLayer.getExtrudeSpeedFactor() - 50;
                 fanSpeed = config.fanSpeedMin * n / 50 + config.fanSpeedMax * (50 - n) / 50;
             }
-            if (int(layerNr) < config.fanFullOnLayerNr)
+            if (static_cast<int>(layerNr) < config.fanFullOnLayerNr)
             {
                 //Slow down the fan on the layers below the [fanFullOnLayerNr], where layer 0 is speed 0.
                 fanSpeed = fanSpeed * layerNr / config.fanFullOnLayerNr;
             }
             gcode.writeFanCommand(fanSpeed);
 
-            gcodeLayer.writeGCode(config.coolHeadLift > 0, int(layerNr) > 0 ? config.layerThickness : config.initialLayerThickness);
+            gcodeLayer.writeGCode(config.coolHeadLift > 0, static_cast<int>(layerNr) > 0 ? config.layerThickness : config.initialLayerThickness);
         }
 
         cura::log("Wrote layers in %5.2fs.\n", timeKeeper.restart());
@@ -486,7 +519,7 @@ private:
     {
         int prevExtruder = gcodeLayer.getExtruder();
         bool extruderChanged = gcodeLayer.setExtruder(volumeIdx);
-        if (layerNr == 0 && volumeIdx == 0)
+        if (layerNr == 0 && volumeIdx == 0 && !(config.raftBaseThickness > 0 && config.raftInterfaceThickness > 0))
         {
             if (storage.skirt.size() > 0)
                 gcodeLayer.addTravel(storage.skirt[storage.skirt.size()-1].closestPointTo(gcode.getPositionXY()));
@@ -504,6 +537,47 @@ private:
             sendPolygonsToGui("oozeshield", layerNr, layer->printZ, storage.oozeShield[layerNr]);
             gcodeLayer.setAlwaysRetract(!config.enableCombing);
         }
+
+        if (config.simpleMode)
+        {
+            Polygons polygons;
+            for(unsigned int partNr=0; partNr<layer->parts.size(); partNr++)
+            {
+                for(unsigned int n=0; n<layer->parts[partNr].outline.size(); n++)
+                {
+                    for(unsigned int m=1; m<layer->parts[partNr].outline[n].size(); m++)
+                    {
+                        Polygon p;
+                        p.add(layer->parts[partNr].outline[n][m-1]);
+                        p.add(layer->parts[partNr].outline[n][m]);
+                        polygons.add(p);
+                    }
+                    if (layer->parts[partNr].outline[n].size() > 0)
+                    {
+                        Polygon p;
+                        p.add(layer->parts[partNr].outline[n][layer->parts[partNr].outline[n].size()-1]);
+                        p.add(layer->parts[partNr].outline[n][0]);
+                        polygons.add(p);
+                    }
+                }
+            }
+            for(unsigned int n=0; n<layer->openLines.size(); n++)
+            {
+                for(unsigned int m=1; m<layer->openLines[n].size(); m++)
+                {
+                    Polygon p;
+                    p.add(layer->openLines[n][m-1]);
+                    p.add(layer->openLines[n][m]);
+                    polygons.add(p);
+                }
+            }
+            if (config.spiralizeMode)
+                inset0Config.spiralize = true;
+            
+            gcodeLayer.addPolygonsByOptimizer(polygons, &inset0Config);
+            return;
+        }
+
 
         PathOrderOptimizer partOrderOptimizer(gcode.getPositionXY());
         for(unsigned int partNr=0; partNr<layer->parts.size(); partNr++)
@@ -525,9 +599,9 @@ private:
             {
                 if (config.spiralizeMode)
                 {
-                    if (int(layerNr) >= config.downSkinCount)
+                    if (static_cast<int>(layerNr) >= config.downSkinCount)
                         inset0Config.spiralize = true;
-                    if (int(layerNr) == config.downSkinCount && part->insets.size() > 0)
+                    if (static_cast<int>(layerNr) == config.downSkinCount && part->insets.size() > 0)
                         gcodeLayer.addPolygonsByOptimizer(part->insets[0], &insetXConfig);
                 }
                 for(int insetNr=part->insets.size()-1; insetNr>-1; insetNr--)
@@ -590,7 +664,7 @@ private:
             //sendPolygonsToGui("infill", layerNr, layer->z, fillPolygons);
 
             //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-            if (!config.spiralizeMode || int(layerNr) < config.downSkinCount)
+            if (!config.spiralizeMode || static_cast<int>(layerNr) < config.downSkinCount)
                 gcodeLayer.moveInsideCombBoundary(config.extrusionWidth * 2);
         }
         gcodeLayer.setCombBoundary(nullptr);
